@@ -1,12 +1,37 @@
 :root {
-  --primary-bg: #1a1a2e;
-  --secondary-bg: #16213e;
-  --accent-color: #4a90e2;
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --error-color: #f44336;
-  --success-color: #4caf50;
-  --warning-color: #ff9800;
+  /* Base colors */
+  --primary-bg: #0f172a;
+  --secondary-bg: #1e293b;
+  --accent-color: #3b82f6;
+  --accent-hover: #2563eb;
+  
+  /* Text colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  
+  /* Status colors */
+  --online-color: #22c55e;
+  --away-color: #f59e0b;
+  --offline-color: #ef4444;
+  
+  /* Semantic colors */
+  --error-color: #ef4444;
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+  
+  /* Effects */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
 }
 
 * {
@@ -20,6 +45,8 @@ body {
   background-color: var(--primary-bg);
   color: var(--text-primary);
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .app {
@@ -32,41 +59,11 @@ body {
   background-color: var(--secondary-bg);
   padding: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .app-info {
   max-width: 1200px;
   margin: 0 auto;
   font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-input, button {
-  font: inherit;
-}
-
-a {
-  color: var(--accent-color);
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--primary-bg);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
+  color: var(--text-secondary
