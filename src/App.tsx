@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import ChatPage from './pages/ChatPage';
@@ -10,44 +10,80 @@ export interface User {
   username: string;
   role: 'owner' | 'admin' | 'moderator' | 'user' | 'guest';
   status: 'online' | 'away' | 'offline';
+  email?: string;
   description?: string;
   joinDate: string;
 }
 
-export interface Channel {
-  id: string;
-  name: string;
-  type: 'announcements' | 'chat' | 'links';
-  description: string;
-}
+// Mock users database
+const MOCK_USERS: Record<string, User & { password: string }> = {
+  'sigmabread': {
+    id: '1',
+    username: 'sigmabread',
+    password: 'admin123',
+    role: 'owner',
+    status: 'online',
+    email: 'sigmabread@example.com',
+    description: 'Owner of the chat',
+    joinDate: '2025-01-01'
+  }
+};
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('currentUser');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  const handleLogin = (username: string, password: string) => {
-    if (username === 'sigmabread' && password === 'admin123') {
-      setCurrentUser({
-        id: '1',
-        username: 'sigmabread',
-        role: 'owner',
-        status: 'online',
-        description: 'Owner of the chat',
-        joinDate: '2025-01-01'
-      });
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('currentUser');
+    }
+  }, [currentUser]);
+
+  const handleLogin = (username: string, password: string): boolean => {
+    const user = MOCK_USERS[username];
+    if (user && user.password === password) {
+      const { password: _, ...userWithoutPassword } = user;
+      setCurrentUser(userWithoutPassword);
       return true;
     }
     return false;
   };
 
+  const handleRegister = (username: string, password: string, email: string): boolean => {
+    if (MOCK_USERS[username]) {
+      return false;
+    }
+
+    const newUser = {
+      id: Date.now().toString(),
+      username,
+      password,
+      email,
+      role: 'user' as const,
+      status: 'online' as const,
+      joinDate: new Date().toISOString().split('T')[0]
+    };
+
+    MOCK_USERS[username] = newUser;
+    const { password: _, ...userWithoutPassword } = newUser;
+    setCurrentUser(userWithoutPassword);
+    return true;
+  };
+
   const handleGuestLogin = () => {
     const guestId = Math.random().toString(36).substring(7);
-    setCurrentUser({
+    const guestUser: User = {
       id: guestId,
-      username: `Guest${guestId}`,
+      username: `Guest${guestId.substring(0, 4)}`,
       role: 'guest',
       status: 'online',
       joinDate: new Date().toISOString().split('T')[0]
-    });
+    };
+    setCurrentUser(guestUser);
   };
 
   return (
@@ -55,7 +91,9 @@ const App: React.FC = () => {
       <div className="app">
         <header className="app-header">
           <div className="app-info">
-            <div>Current Date and Time (UTC): {new Date().toISOString().slice(0, 19).replace('T', ' ')}</div>
+            <div>Current Date and Time (UTC): {
+              new Date().toISOString().replace('T', ' ').substring(0, 19)
+            }</div>
             <div>Current User's Login: {currentUser?.username || 'not logged in'}</div>
           </div>
         </header>
@@ -63,14 +101,20 @@ const App: React.FC = () => {
           <Route path="/" element={
             currentUser ? 
             <Navigate to="/chat" /> : 
-            <LandingPage onLogin={handleLogin} onGuestLogin={handleGuestLogin} />
+            <LandingPage 
+              onLogin={handleLogin} 
+              onGuestLogin={handleGuestLogin}
+              onRegister={handleRegister}
+            />
           } />
           <Route path="/chat" element={
             currentUser ? 
             <ChatPage currentUser={currentUser} /> : 
             <Navigate to="/" />
           } />
-          <Route path="/profile/:username" element={<UserProfile currentUser={currentUser} />} />
+          <Route path="/profile/:username" element={
+            <UserProfile currentUser={currentUser} />
+          } />
         </Routes>
       </div>
     </Router>
