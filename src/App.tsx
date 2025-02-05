@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LandingPage from './pages/LandingPage';
 import ChatPage from './pages/ChatPage';
 import UserProfile from './components/UserProfile';
+import AdminPanel from './components/AdminPanel';
+import { useIdle } from './hooks/useIdle';
 import './styles/main.css';
 
 export interface User {
@@ -10,62 +12,161 @@ export interface User {
   username: string;
   role: 'owner' | 'admin' | 'moderator' | 'user' | 'guest';
   status: 'online' | 'away' | 'offline';
-  email?: string;
   description?: string;
   joinDate: string;
+  lastLogin: string;
+  ipAddress?: string;
+  isBanned?: boolean;
+  banReason?: string;
+  banExpiration?: string;
+  permissions: string[];
+  activityLog: ActivityLog[];
+  customProfile?: {
+    backgroundColor?: string;
+    textColor?: string;
+    badges: string[];
+    level: number;
+    points: number;
+  };
 }
 
-// Mock users database
+interface ActivityLog {
+  type: 'login' | 'message' | 'channel_join' | 'profile_update' | 'moderation_action';
+  timestamp: string;
+  details: string;
+}
+
+// Mock users database with enhanced features
 const MOCK_USERS: Record<string, User & { password: string }> = {
   'sigmabread': {
     id: '1',
     username: 'sigmabread',
     password: 'admin123',
     role: 'owner',
-    status: 'online',
-    email: 'sigmabread@example.com',
+    status: 'offline',
     description: 'Owner of the chat',
-    joinDate: '2025-01-01'
+    joinDate: '2025-01-01',
+    lastLogin: new Date().toISOString(),
+    ipAddress: '127.0.0.1',
+    permissions: ['ADMIN_PANEL', 'MANAGE_USERS', 'MANAGE_CHANNELS', 'MODERATE_CONTENT', 'VIEW_LOGS'],
+    activityLog: [],
+    customProfile: {
+      backgroundColor: '#1a1a2e',
+      textColor: '#gold',
+      badges: ['owner', 'founder', 'developer'],
+      level: 100,
+      points: 10000
+    }
   }
 };
 
-const App: React.FC = () => {
+// Admin channels configuration
+const ADMIN_CHANNELS = [
+  {
+    id: 'admin-dashboard',
+    name: '🛡️ Admin Dashboard',
+    type: 'admin',
+    description: 'Administrative controls and monitoring',
+    allowedRoles: ['owner', 'admin']
+  },
+  {
+    id: 'mod-logs',
+    name: '📝 Moderation Logs',
+    type: 'admin',
+    description: 'View all moderation actions',
+    allowedRoles: ['owner', 'admin', 'moderator']
+  }
+];
+
+export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('currentUser');
     return saved ? JSON.parse(saved) : null;
   });
+  
+  // Use the idle hook to track user activity
+  const isIdle = useIdle(300000); // 5 minutes
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('currentUser');
+      const updatedUser = {
+        ...currentUser,
+        status: isIdle ? 'away' : 'online',
+        lastLogin: new Date().toISOString()
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     }
+  }, [isIdle]);
+
+  // Handle window focus/blur for online status
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          status: document.hidden ? 'away' : 'online'
+        };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [currentUser]);
 
   const handleLogin = (username: string, password: string): boolean => {
     const user = MOCK_USERS[username];
-    if (user && user.password === password) {
+    if (user && user.password === password && !user.isBanned) {
       const { password: _, ...userWithoutPassword } = user;
-      setCurrentUser(userWithoutPassword);
+      const updatedUser = {
+        ...userWithoutPassword,
+        status: 'online',
+        lastLogin: new Date().toISOString(),
+        activityLog: [
+          ...userWithoutPassword.activityLog,
+          {
+            type: 'login',
+            timestamp: new Date().toISOString(),
+            details: 'User logged in'
+          }
+        ]
+      };
+      setCurrentUser(updatedUser);
       return true;
     }
     return false;
   };
 
-  const handleRegister = (username: string, password: string, email: string): boolean => {
+  const handleRegister = (username: string, password: string): boolean => {
     if (MOCK_USERS[username]) {
       return false;
     }
 
-    const newUser = {
+    const newUser: User & { password: string } = {
       id: Date.now().toString(),
       username,
       password,
-      email,
-      role: 'user' as const,
-      status: 'online' as const,
-      joinDate: new Date().toISOString().split('T')[0]
+      role: 'user',
+      status: 'online',
+      joinDate: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      permissions: ['CHAT', 'UPDATE_PROFILE'],
+      activityLog: [{
+        type: 'login',
+        timestamp: new Date().toISOString(),
+        details: 'Account created'
+      }],
+      customProfile: {
+        backgroundColor: '#1a1a2e',
+        textColor: '#ffffff',
+        badges: ['newcomer'],
+        level: 1,
+        points: 0
+      }
     };
 
     MOCK_USERS[username] = newUser;
@@ -74,26 +175,16 @@ const App: React.FC = () => {
     return true;
   };
 
-  const handleGuestLogin = () => {
-    const guestId = Math.random().toString(36).substring(7);
-    const guestUser: User = {
-      id: guestId,
-      username: `Guest${guestId.substring(0, 4)}`,
-      role: 'guest',
-      status: 'online',
-      joinDate: new Date().toISOString().split('T')[0]
-    };
-    setCurrentUser(guestUser);
-  };
-
   return (
     <Router>
       <div className="app">
         <header className="app-header">
           <div className="app-info">
-            <div>Current Date and Time (UTC): {
-              new Date().toISOString().replace('T', ' ').substring(0, 19)
-            }</div>
+            <div>
+              Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): {
+                new Date().toISOString().replace('T', ' ').slice(0, 19)
+              }
+            </div>
             <div>Current User's Login: {currentUser?.username || 'not logged in'}</div>
           </div>
         </header>
@@ -101,16 +192,20 @@ const App: React.FC = () => {
           <Route path="/" element={
             currentUser ? 
             <Navigate to="/chat" /> : 
-            <LandingPage 
-              onLogin={handleLogin} 
-              onGuestLogin={handleGuestLogin}
-              onRegister={handleRegister}
-            />
+            <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
           } />
           <Route path="/chat" element={
             currentUser ? 
-            <ChatPage currentUser={currentUser} /> : 
+            <ChatPage 
+              currentUser={currentUser} 
+              adminChannels={currentUser.role === 'owner' ? ADMIN_CHANNELS : []}
+            /> : 
             <Navigate to="/" />
+          } />
+          <Route path="/admin/*" element={
+            currentUser?.role === 'owner' ? 
+            <AdminPanel currentUser={currentUser} /> : 
+            <Navigate to="/chat" />
           } />
           <Route path="/profile/:username" element={
             <UserProfile currentUser={currentUser} />
