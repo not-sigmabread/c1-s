@@ -1,140 +1,110 @@
-import React, { useState } from 'react';
-import { User } from '../App';
-import AdminPanelChannel from '../components/AdminPanelChannel';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { useUser } from '../contexts/UserContext';
+import { ChatSidebar } from '../components/chat/ChatSidebar';
+import { ChatMessages } from '../components/chat/ChatMessages';
+import { AdminChannel } from '../components/chat/AdminChannel';
 import '../styles/ChatPage.css';
-
-interface ChatPageProps {
-  currentUser: User;
-}
 
 interface Channel {
   id: string;
   name: string;
   type: 'public' | 'private' | 'admin';
   description: string;
+  createdBy: string;
+  createdAt: string;
+  lastActivity?: string;
+  participants?: string[];
 }
 
-const CHANNELS: Channel[] = [
-  {
-    id: 'general',
-    name: '💬 General',
-    type: 'public',
-    description: 'General chat for everyone'
-  },
-  {
-    id: 'announcements',
-    name: '📢 Announcements',
-    type: 'public',
-    description: 'Important announcements'
-  },
-  {
-    id: 'admin-panel',
-    name: '🛡️ Admin Panel',
-    type: 'admin',
-    description: 'Admin only channel'
-  }
-];
+interface Message {
+  id: string;
+  channelId: string;
+  content: string;
+  sender: string;
+  timestamp: string;
+  type: 'text' | 'system' | 'action';
+  mentions?: string[];
+  attachments?: string[];
+}
 
-const ChatPage: React.FC<ChatPageProps> = ({ currentUser }) => {
-  const [currentChannel, setCurrentChannel] = useState('general');
-  const [theme, setTheme] = useState('dark');
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+export const ChatPage: React.FC = () => {
+  const { currentUser } = useUser();
+  const [channels, setChannels] = useState<Channel[]>([
+    {
+      id: 'general',
+      name: '💬 General',
+      type: 'public',
+      description: 'General chat for everyone',
+      createdBy: 'system',
+      createdAt: '2025-01-01 00:00:00'
+    },
+    {
+      id: 'announcements',
+      name: '📢 Announcements',
+      type: 'public',
+      description: 'Important announcements',
+      createdBy: 'system',
+      createdAt: '2025-01-01 00:00:00'
+    },
+    {
+      id: 'admin-panel',
+      name: '🛡️ Admin Panel',
+      type: 'admin',
+      description: 'Administrative controls and features',
+      createdBy: 'system',
+      createdAt: '2025-01-01 00:00:00'
+    }
+  ]);
+
+  const [activeChannel, setActiveChannel] = useState<string>('general');
+  const [messages, setMessages] = useState<Record<string, Message[]>>({});
 
   // Filter channels based on user role
-  const availableChannels = CHANNELS.filter(channel => 
-    channel.type !== 'admin' || currentUser.role === 'owner' || currentUser.role === 'admin'
+  const availableChannels = channels.filter(channel => 
+    channel.type !== 'admin' || 
+    (currentUser && ['owner', 'admin'].includes(currentUser.role))
   );
 
-  const handleThemeChange = (newTheme: string) => {
-    setTheme(newTheme);
-    document.body.className = `theme-${newTheme}`;
+  const handleSendMessage = (content: string) => {
+    if (!currentUser || !content.trim()) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      channelId: activeChannel,
+      content: content.trim(),
+      sender: currentUser.username,
+      timestamp: new Date().toISOString(),
+      type: 'text'
+    };
+
+    setMessages(prev => ({
+      ...prev,
+      [activeChannel]: [...(prev[activeChannel] || []), newMessage]
+    }));
   };
 
   return (
-    <div className="chat-layout">
-      <aside className="chat-sidebar">
-        {/* User Profile Section */}
-        <div className="user-profile">
-          <div className={`user-avatar ${currentUser.role}`}>
-            {currentUser.username[0].toUpperCase()}
-          </div>
-          <div className="user-info">
-            <span className={`username-${currentUser.role}`}>
-              {currentUser.username}
-            </span>
-            <span className="user-role">{currentUser.role}</span>
-          </div>
-          <button 
-            className="user-menu-button"
-            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-          >
-            ⚙️
-          </button>
-          
-          {isUserMenuOpen && (
-            <div className="user-menu-dropdown">
-              <div className="menu-section">
-                <h3>Theme</h3>
-                <button onClick={() => handleThemeChange('dark')}>🌑 Dark</button>
-                <button onClick={() => handleThemeChange('light')}>☀️ Light</button>
-                <button onClick={() => handleThemeChange('midnight')}>
-                  🌌 Midnight
-                </button>
-              </div>
-              <div className="menu-section">
-                <h3>Status</h3>
-                <button>🟢 Online</button>
-                <button>🌙 Away</button>
-                <button>⭕ Do Not Disturb</button>
-              </div>
-              <div className="menu-divider" />
-              <button className="menu-item logout">🚪 Log Out</button>
-            </div>
-          )}
-        </div>
-
-        {/* Channels List */}
-        <div className="channels-section">
-          <h2>Channels</h2>
-          <div className="channels-list">
-            {availableChannels.map(channel => (
-              <button
-                key={channel.id}
-                className={`channel-item ${currentChannel === channel.id ? 'active' : ''} ${channel.type}`}
-                onClick={() => setCurrentChannel(channel.id)}
-              >
-                <span className="channel-name">{channel.name}</span>
-                <span className="channel-description">{channel.description}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </aside>
-
+    <div className="chat-container">
+      <ChatSidebar 
+        channels={availableChannels}
+        activeChannel={activeChannel}
+        onChannelSelect={setActiveChannel}
+        currentUser={currentUser}
+      />
+      
       <main className="chat-main">
-        {currentChannel === 'admin-panel' ? (
-          <AdminPanelChannel currentUser={currentUser} />
+        {activeChannel === 'admin-panel' && currentUser?.role === 'owner' ? (
+          <AdminChannel currentUser={currentUser} />
         ) : (
-          <>
-            <div className="chat-header">
-              <h2>{CHANNELS.find(c => c.id === currentChannel)?.name}</h2>
-            </div>
-            <div className="messages-container">
-              {/* Regular chat messages will go here */}
-            </div>
-            <div className="chat-input-container">
-              <input
-                type="text"
-                placeholder="Type a message..."
-                className="chat-input"
-              />
-              <button className="send-button">Send</button>
-            </div>
-          </>
+          <ChatMessages
+            messages={messages[activeChannel] || []}
+            channel={channels.find(c => c.id === activeChannel)!}
+            currentUser={currentUser}
+            onSendMessage={handleSendMessage}
+          />
         )}
       </main>
     </div>
   );
 };
-
-export default ChatPage;
