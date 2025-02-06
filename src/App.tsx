@@ -6,6 +6,8 @@ import UserProfile from './components/UserProfile';
 import AdminPanel from './components/AdminPanel';
 import { useIdle } from './hooks/useIdle';
 import './styles/main.css';
+import './styles/variables.css';
+import './styles/utilities.css';
 
 type UserStatus = 'online' | 'away' | 'offline';
 type UserRole = 'owner' | 'admin' | 'moderator' | 'user' | 'guest';
