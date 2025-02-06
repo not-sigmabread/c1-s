@@ -37,27 +37,38 @@ interface ActivityLog {
 }
 
 // Mock users database with enhanced features
-const MOCK_USERS: Record<string, User & { password: string }> = {
-  'sigmabread': {
-    id: '1',
-    username: 'sigmabread',
-    password: 'admin123',
-    role: 'owner',
-    status: 'offline',
-    description: 'Owner of the chat',
-    joinDate: '2025-01-01',
+const handleRegister = (username: string, password: string): boolean => {
+  if (MOCK_USERS[username]) {
+    return false;
+  }
+
+  const newUser: User & { password: string } = {
+    id: Date.now().toString(),
+    username,
+    password,
+    role: 'user',
+    status: 'online',
+    joinDate: new Date().toISOString().split('T')[0],
     lastLogin: new Date().toISOString(),
-    ipAddress: '127.0.0.1',
-    permissions: ['ADMIN_PANEL', 'MANAGE_USERS', 'MANAGE_CHANNELS', 'MODERATE_CONTENT', 'VIEW_LOGS'],
-    activityLog: [],
+    permissions: ['CHAT', 'UPDATE_PROFILE'],
+    activityLog: [{
+      type: 'login',
+      timestamp: new Date().toISOString(),
+      details: 'Account created'
+    }],
     customProfile: {
       backgroundColor: '#1a1a2e',
-      textColor: '#gold',
-      badges: ['owner', 'founder', 'developer'],
-      level: 100,
-      points: 10000
+      textColor: '#ffffff',
+      badges: ['newcomer'],
+      level: 1,
+      points: 0
     }
-  }
+  };
+
+  MOCK_USERS[username] = newUser;
+  const { password: _, ...userWithoutPassword } = newUser;
+  setCurrentUser(userWithoutPassword);
+  return true;
 };
 
 // Admin channels configuration
