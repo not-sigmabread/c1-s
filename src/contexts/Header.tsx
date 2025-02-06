@@ -4,17 +4,34 @@ import { useTheme } from '../contexts/ThemeContext';
 import '../styles/Header.css';
 
 export const Header: React.FC = () => {
-  const { currentUser, handleLogout } = useUser();
-  const { theme, toggleTheme } = useTheme();
-  const [currentTime, setCurrentTime] = useState(formatDate(new Date()));
+  const { currentUser } = useUser();
+  const [currentTime, setCurrentTime] = useState(formatDateTime(new Date()));
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(formatDate(new Date()));
+      setCurrentTime(formatDateTime(new Date()));
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
+
+  function formatDateTime(date: Date): string {
+    return `Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): ${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')} ${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}:${String(date.getUTCSeconds()).padStart(2, '0')}`;
+  }
+
+  return (
+    <header className="header">
+      <div className="header-content">
+        <div className="header-info">
+          <div className="header-time">{currentTime}</div>
+          <div className="header-user">
+            Current User's Login: {currentUser?.username || 'not logged in'}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
 
   function formatDate(date: Date): string {
     const year = date.getFullYear();
