@@ -7,7 +7,7 @@ interface LoginProps {
   onRegister: (username: string, password: string) => boolean;
 }
 
-const LandingPage: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
+export const LandingPage: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
   const navigate = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,52 +16,69 @@ const LandingPage: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    if (isRegistering) {
-      if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
-      if (onRegister(formData.username, formData.password)) {
-        navigate('/chat');
+    try {
+      if (isRegistering) {
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        if (formData.password.length < 6) {
+          throw new Error('Password must be at least 6 characters');
+        }
+        if (onRegister(formData.username, formData.password)) {
+          navigate('/chat');
+        } else {
+          throw new Error('Username already taken');
+        }
       } else {
-        setError('Username already taken');
+        if (onLogin(formData.username, formData.password)) {
+          navigate('/chat');
+        } else {
+          throw new Error('Invalid username or password');
+        }
       }
-    } else {
-      if (onLogin(formData.username, formData.password)) {
-        navigate('/chat');
-      } else {
-        setError('Invalid username or password');
-      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [e.target.name]: e.target.value
-    });
+    }));
     setError('');
   };
 
   return (
     <div className="landing-container">
       <div className="auth-box">
-        <h1>Welcome to Chat</h1>
-        
+        <div className="auth-header">
+          <h1>Welcome to Chat</h1>
+          <p className="auth-subtitle">
+            {isRegistering 
+              ? 'Create an account to get started' 
+              : 'Sign in to continue to chat'}
+          </p>
+        </div>
+
         <div className="auth-tabs">
           <button 
-            className={!isRegistering ? 'active' : ''} 
+            className={`auth-tab ${!isRegistering ? 'active' : ''}`}
             onClick={() => setIsRegistering(false)}
           >
             Login
           </button>
           <button 
-            className={isRegistering ? 'active' : ''} 
+            className={`auth-tab ${isRegistering ? 'active' : ''}`}
             onClick={() => setIsRegistering(true)}
           >
             Register
@@ -71,54 +88,90 @@ const LandingPage: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleInputChange}
-              placeholder="Enter username"
-              required
-            />
+            <div className="input-wrapper">
+              <span className="input-icon">👤</span>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                placeholder="Enter your username"
+                required
+                disabled={loading}
+                className="input-with-icon"
+              />
+            </div>
           </div>
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="Enter password"
-              required
-            />
+            <div className="input-wrapper">
+              <span className="input-icon">🔒</span>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Enter your password"
+                required
+                disabled={loading}
+                className="input-with-icon"
+              />
+            </div>
           </div>
 
           {isRegistering && (
             <div className="form-group">
               <label htmlFor="confirmPassword">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder="Confirm password"
-                required
-              />
+              <div className="input-wrapper">
+                <span className="input-icon">🔒</span>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  placeholder="Confirm your password"
+                  required
+                  disabled={loading}
+                  className="input-with-icon"
+                />
+              </div>
             </div>
           )}
 
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="error-message">
+              <span className="error-icon">⚠️</span>
+              {error}
+            </div>
+          )}
 
-          <button type="submit" className="submit-button">
-            {isRegistering ? 'Create Account' : 'Login'}
+          <button 
+            type="submit" 
+            className={`submit-button ${loading ? 'loading' : ''}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="loading-spinner"></span>
+            ) : (
+              isRegistering ? 'Create Account' : 'Login'
+            )}
           </button>
         </form>
+
+        <div className="auth-footer">
+          <p>
+            {isRegistering ? (
+              <>Already have an account? <button className="link-button" onClick={() => setIsRegistering(false)}>Login</button></>
+            ) : (
+              <>Don't have an account? <button className="link-button" onClick={() => setIsRegistering(true)}>Register</button></>
+            )}
+          </p>
+        </div>
       </div>
     </div>
   );
 };
-
-export default LandingPage;
