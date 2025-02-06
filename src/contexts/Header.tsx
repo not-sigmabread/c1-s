@@ -6,53 +6,59 @@ import '../styles/Header.css';
 export const Header: React.FC = () => {
   const { currentUser, handleLogout } = useUser();
   const { theme, toggleTheme } = useTheme();
-  const [currentTime, setCurrentTime] = useState(formatTime(new Date()));
+  const [currentTime, setCurrentTime] = useState(formatDate(new Date()));
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(formatTime(new Date()));
+      setCurrentTime(formatDate(new Date()));
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
 
-  function formatTime(date: Date): string {
-    return date.toISOString()
-      .replace('T', ' ')
-      .slice(0, 19);
+  function formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
   
   return (
     <header className="header">
       <div className="header-content">
-        <div className="header-left">
-          <span className="header-time">
-            {currentTime} UTC
-          </span>
+        <div className="header-info">
+          <div className="header-time">
+            Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): {currentTime}
+          </div>
+          <div className="header-user">
+            Current User's Login: {currentUser?.username || 'not logged in'}
+          </div>
         </div>
-        <div className="header-right">
-          {currentUser ? (
-            <div className="user-info">
-              <span className={`status-dot status-${currentUser.status}`} />
-              <span className={`username role-${currentUser.role}`}>
-                {currentUser.username}
-              </span>
+        <div className="header-controls">
+          {currentUser && (
+            <div className="user-controls">
+              <div className={`status-indicator status-${currentUser.status}`}>
+                <span className="status-dot" />
+                <span className="status-text">{currentUser.status}</span>
+              </div>
+              <div className={`user-role role-${currentUser.role}`}>
+                {currentUser.role}
+              </div>
               <button 
-                className="btn btn-icon" 
+                className="theme-toggle"
                 onClick={toggleTheme}
-                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               >
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
-              <button 
-                className="btn btn-secondary" 
-                onClick={handleLogout}
-              >
+              <button className="logout-button" onClick={handleLogout}>
                 Logout
               </button>
             </div>
-          ) : (
-            <span className="not-logged-in">Not logged in</span>
           )}
         </div>
       </div>
