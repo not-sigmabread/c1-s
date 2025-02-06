@@ -4,18 +4,16 @@ import '../styles/LandingPage.css';
 
 interface LoginProps {
   onLogin: (username: string, password: string) => boolean;
-  onGuestLogin: () => void;
-  onRegister: (username: string, password: string, email: string) => boolean;
+  onRegister: (username: string, password: string) => boolean;
 }
 
-const LandingPage: React.FC<LoginProps> = ({ onLogin, onGuestLogin, onRegister }) => {
+const LandingPage: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
   const navigate = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    confirmPassword: '',
-    email: ''
+    confirmPassword: ''
   });
   const [error, setError] = useState('');
 
@@ -28,7 +26,7 @@ const LandingPage: React.FC<LoginProps> = ({ onLogin, onGuestLogin, onRegister }
         setError('Passwords do not match');
         return;
       }
-      if (onRegister(formData.username, formData.password, formData.email)) {
+      if (onRegister(formData.username, formData.password)) {
         navigate('/chat');
       } else {
         setError('Username already taken');
@@ -48,11 +46,6 @@ const LandingPage: React.FC<LoginProps> = ({ onLogin, onGuestLogin, onRegister }
       [e.target.name]: e.target.value
     });
     setError('');
-  };
-
-  const handleGuestLogin = () => {
-    onGuestLogin();
-    navigate('/chat');
   };
 
   return (
@@ -89,21 +82,6 @@ const LandingPage: React.FC<LoginProps> = ({ onLogin, onGuestLogin, onRegister }
             />
           </div>
 
-          {isRegistering && (
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter email"
-                required
-              />
-            </div>
-          )}
-
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -136,18 +114,6 @@ const LandingPage: React.FC<LoginProps> = ({ onLogin, onGuestLogin, onRegister }
 
           <button type="submit" className="submit-button">
             {isRegistering ? 'Create Account' : 'Login'}
-          </button>
-
-          <div className="separator">
-            <span>OR</span>
-          </div>
-
-          <button 
-            type="button" 
-            className="guest-button"
-            onClick={handleGuestLogin}
-          >
-            Continue as Guest
           </button>
         </form>
       </div>
