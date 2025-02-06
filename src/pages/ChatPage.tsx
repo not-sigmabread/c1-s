@@ -1,136 +1,138 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { User } from '../App';
-import UserList from '../components/UserList';
-import ChannelList from '../components/ChannelList';
-import MessageInput from '../components/MessageInput';
 import '../styles/ChatPage.css';
-
-interface Message {
-  id: string;
-  content: string;
-  username: string;
-  channel: string;
-  timestamp: string;
-  type: 'message' | 'system' | 'link';
-}
 
 interface ChatPageProps {
   currentUser: User;
 }
 
-const MOCK_CHANNELS = [
-  { id: '1', name: 'announcements', type: 'announcements', description: 'Important announcements' },
-  { id: '2', name: 'chat', type: 'chat', description: 'General chat' },
-  { id: '3', name: 'links', type: 'links', description: 'Share links' }
-];
+interface Channel {
+  id: string;
+  name: string;
+  type: 'public' | 'private' | 'admin';
+  description: string;
+}
 
-const MOCK_USERS: User[] = [
-  { id: '1', username: 'sigmabread', role: 'owner', status: 'online', description: 'Owner', joinDate: '2025-01-01' },
-  { id: '2', username: 'mod1', role: 'moderator', status: 'online', description: 'Moderator', joinDate: '2025-01-02' },
-  { id: '3', username: 'user1', role: 'user', status: 'away', description: 'Regular user', joinDate: '2025-01-03' }
+const CHANNELS: Channel[] = [
+  {
+    id: 'general',
+    name: '💬 General',
+    type: 'public',
+    description: 'General chat for everyone'
+  },
+  {
+    id: 'announcements',
+    name: '📢 Announcements',
+    type: 'public',
+    description: 'Important announcements'
+  },
+  {
+    id: 'admin-panel',
+    name: '🛡️ Admin Panel',
+    type: 'admin',
+    description: 'Admin only channel'
+  }
 ];
 
 const ChatPage: React.FC<ChatPageProps> = ({ currentUser }) => {
-  const [currentChannel, setCurrentChannel] = useState('chat');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [users] = useState<User[]>(MOCK_USERS);
+  const [currentChannel, setCurrentChannel] = useState('general');
+  const [theme, setTheme] = useState('dark');
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  useEffect(() => {
-    // Load initial messages
-    const initialMessages: Message[] = [
-      {
-        id: '1',
-        content: 'Welcome to the chat!',
-        username: 'sigmabread',
-        channel: 'announcements',
-        timestamp: new Date().toISOString(),
-        type: 'system'
-      }
-    ];
-    setMessages(initialMessages);
-  }, []);
+  // Filter channels based on user role
+  const availableChannels = CHANNELS.filter(channel => 
+    channel.type !== 'admin' || currentUser.role === 'owner' || currentUser.role === 'admin'
+  );
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(scrollToBottom, [messages]);
-
-  const handleSendMessage = (content: string) => {
-    if (!content.trim()) return;
-
-    // Check permissions
-    if (currentChannel === 'announcements' && 
-        !['owner', 'admin', 'moderator'].includes(currentUser.role)) {
-      alert('You do not have permission to post in announcements');
-      return;
-    }
-
-    if (currentChannel === 'links' && 
-        !['owner', 'admin', 'moderator'].includes(currentUser.role)) {
-      alert('You do not have permission to post links');
-      return;
-    }
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      username: currentUser.username,
-      channel: currentChannel,
-      timestamp: new Date().toISOString(),
-      type: content.startsWith('http') ? 'link' : 'message'
-    };
-
-    setMessages([...messages, newMessage]);
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+    document.body.className = `theme-${newTheme}`;
   };
 
   return (
-    <div className="chat-page">
-      <aside className="sidebar">
-        <ChannelList 
-          channels={MOCK_CHANNELS}
-          currentChannel={currentChannel}
-          onChannelChange={setCurrentChannel}
-          userRole={currentUser.role}
-        />
-        <UserList users={users} currentUser={currentUser} />
+    <div className="chat-layout">
+      {/* Sidebar */}
+      <aside className="chat-sidebar">
+        {/* User Profile Section */}
+        <div className="user-profile">
+          <div className={`user-avatar ${currentUser.role}`}>
+            {currentUser.username[0].toUpperCase()}
+          </div>
+          <div className="user-info">
+            <span className={`username-${currentUser.role}`}>
+              {currentUser.username}
+            </span>
+            <span className="user-role">{currentUser.role}</span>
+          </div>
+          <button 
+            className="user-menu-button"
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+          >
+            ⚙️
+          </button>
+          
+          {/* User Menu Dropdown */}
+          {isUserMenuOpen && (
+            <div className="user-menu-dropdown">
+              <div className="menu-section">
+                <h3>Theme</h3>
+                <button onClick={() => handleThemeChange('dark')}>🌑 Dark</button>
+                <button onClick={() => handleThemeChange('light')}>☀️ Light</button>
+                <button onClick={() => handleThemeChange('midnight')}>
+                  🌌 Midnight
+                </button>
+              </div>
+              <div className="menu-section">
+                <h3>Status</h3>
+                <button>🟢 Online</button>
+                <button>🌙 Away</button>
+                <button>⭕ Do Not Disturb</button>
+              </div>
+              <div className="menu-divider" />
+              <button className="menu-item logout">🚪 Log Out</button>
+            </div>
+          )}
+        </div>
+
+        {/* Channels List */}
+        <div className="channels-section">
+          <h2>Channels</h2>
+          <div className="channels-list">
+            {availableChannels.map(channel => (
+              <button
+                key={channel.id}
+                className={`channel-item ${currentChannel === channel.id ? 'active' : ''} ${channel.type}`}
+                onClick={() => setCurrentChannel(channel.id)}
+              >
+                <span className="channel-name">{channel.name}</span>
+                <span className="channel-description">{channel.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </aside>
 
+      {/* Main Chat Area */}
       <main className="chat-main">
-        <div className="channel-header">
-          #{currentChannel}
+        <div className="chat-header">
+          <h2>{CHANNELS.find(c => c.id === currentChannel)?.name}</h2>
+          <div className="chat-header-actions">
+            {/* Add any channel-specific actions here */}
+          </div>
         </div>
 
         <div className="messages-container">
-          {messages
-            .filter(m => m.channel === currentChannel)
-            .map(message => (
-              <div key={message.id} className={`message ${message.type}`}>
-                <div className="message-header">
-                  <Link to={`/profile/${message.username}`} className="username">
-                    {message.username}
-                  </Link>
-                  <span className="timestamp">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
-                </div>
-                <div className="message-content">
-                  {message.type === 'link' ? (
-                    <a href={message.content} target="_blank" rel="noopener noreferrer">
-                      {message.content}
-                    </a>
-                  ) : (
-                    message.content
-                  )}
-                </div>
-              </div>
-            ))}
-          <div ref={messagesEndRef} />
+          {/* Messages will go here */}
         </div>
 
-        <MessageInput onSendMessage={handleSendMessage} />
+        <div className="chat-input-container">
+          <input
+            type="text"
+            placeholder="Type a message..."
+            className="chat-input"
+          />
+          <button className="send-button">Send</button>
+        </div>
       </main>
     </div>
   );
