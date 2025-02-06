@@ -2,8 +2,21 @@
   /* Base Theme */
   --primary-bg: #0f172a;
   --secondary-bg: #1e293b;
-  --accent-color: #3b82f6;
-  --accent-hover: #2563eb;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  /* Admin Panel Colors */
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+  --info: #3b82f6;
+  
+  /* Button Gradients */
+  --button-gradient-blue: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --button-gradient-red: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --button-gradient-green: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --button-gradient-orange: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   
   /* Gradients */
   --owner-gradient: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
