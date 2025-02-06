@@ -1,31 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { User } from '../App';
-import '../styles/ChatPage.css';
 import AdminPanelChannel from '../components/AdminPanelChannel';
-
-// Inside the ChatPage component's return statement, update the main chat area:
-<main className="chat-main">
-  {currentChannel === 'admin-panel' ? (
-    <AdminPanelChannel currentUser={currentUser} />
-  ) : (
-    <>
-      <div className="chat-header">
-        <h2>{CHANNELS.find(c => c.id === currentChannel)?.name}</h2>
-      </div>
-      <div className="messages-container">
-        {/* Regular chat messages */}
-      </div>
-      <div className="chat-input-container">
-        <input
-          type="text"
-          placeholder="Type a message..."
-          className="chat-input"
-        />
-        <button className="send-button">Send</button>
-      </div>
-    </>
-  )}
-</main>
+import '../styles/ChatPage.css';
 
 interface ChatPageProps {
   currentUser: User;
@@ -76,7 +52,6 @@ const ChatPage: React.FC<ChatPageProps> = ({ currentUser }) => {
 
   return (
     <div className="chat-layout">
-      {/* Sidebar */}
       <aside className="chat-sidebar">
         {/* User Profile Section */}
         <div className="user-profile">
@@ -96,7 +71,6 @@ const ChatPage: React.FC<ChatPageProps> = ({ currentUser }) => {
             ⚙️
           </button>
           
-          {/* User Menu Dropdown */}
           {isUserMenuOpen && (
             <div className="user-menu-dropdown">
               <div className="menu-section">
@@ -137,27 +111,27 @@ const ChatPage: React.FC<ChatPageProps> = ({ currentUser }) => {
         </div>
       </aside>
 
-      {/* Main Chat Area */}
       <main className="chat-main">
-        <div className="chat-header">
-          <h2>{CHANNELS.find(c => c.id === currentChannel)?.name}</h2>
-          <div className="chat-header-actions">
-            {/* Add any channel-specific actions here */}
-          </div>
-        </div>
-
-        <div className="messages-container">
-          {/* Messages will go here */}
-        </div>
-
-        <div className="chat-input-container">
-          <input
-            type="text"
-            placeholder="Type a message..."
-            className="chat-input"
-          />
-          <button className="send-button">Send</button>
-        </div>
+        {currentChannel === 'admin-panel' ? (
+          <AdminPanelChannel currentUser={currentUser} />
+        ) : (
+          <>
+            <div className="chat-header">
+              <h2>{CHANNELS.find(c => c.id === currentChannel)?.name}</h2>
+            </div>
+            <div className="messages-container">
+              {/* Regular chat messages will go here */}
+            </div>
+            <div className="chat-input-container">
+              <input
+                type="text"
+                placeholder="Type a message..."
+                className="chat-input"
+              />
+              <button className="send-button">Send</button>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
