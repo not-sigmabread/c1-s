@@ -82,3 +82,127 @@
   color: var(--text-primary);
   font-size: 1.5rem;
 }
+
+/* Dashboard Styles */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: var(--secondary-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 2rem;
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+/* Form Controls */
+.search-input,
+.filter-select {
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.filter-select {
+  margin-left: 1rem;
+}
+
+/* Tables */
+.users-table,
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.users-table th,
+.logs-table th {
+  text-align: left;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+}
+
+.users-table td,
+.logs-table td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Settings Cards */
+.settings-grid,
+.customization-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.setting-card,
+.custom-card {
+  background: var(--secondary-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Color Pickers */
+.color-pickers {
+  display: grid;
+  gap: 1rem;
+}
+
+.color-input {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.color-input input[type="color"] {
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+}
+
+/* Buttons */
+button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent-color);
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.create-channel-btn {
+  margin-bottom: 1rem;
+}
