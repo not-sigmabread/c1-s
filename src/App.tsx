@@ -15,10 +15,6 @@ export interface User {
   description?: string;
   joinDate: string;
   lastLogin: string;
-  ipAddress?: string;
-  isBanned?: boolean;
-  banReason?: string;
-  banExpiration?: string;
   permissions: string[];
   activityLog: ActivityLog[];
   customProfile?: {
@@ -36,67 +32,33 @@ interface ActivityLog {
   details: string;
 }
 
-// Mock users database with enhanced features
-const handleRegister = (username: string, password: string): boolean => {
-  if (MOCK_USERS[username]) {
-    return false;
-  }
-
-  const newUser: User & { password: string } = {
-    id: Date.now().toString(),
-    username,
-    password,
-    role: 'user',
-    status: 'online',
-    joinDate: new Date().toISOString().split('T')[0],
+// Move MOCK_USERS to a class-level constant
+const INITIAL_MOCK_USERS: Record<string, User & { password: string }> = {
+  'sigmabread': {
+    id: '1',
+    username: 'sigmabread',
+    password: 'admin123',
+    role: 'owner',
+    status: 'offline',
+    description: 'Owner of the chat',
+    joinDate: '2025-01-01',
     lastLogin: new Date().toISOString(),
-    permissions: ['CHAT', 'UPDATE_PROFILE'],
-    activityLog: [{
-      type: 'login',
-      timestamp: new Date().toISOString(),
-      details: 'Account created'
-    }],
+    permissions: ['ADMIN_PANEL', 'MANAGE_USERS', 'MANAGE_CHANNELS', 'MODERATE_CONTENT', 'VIEW_LOGS'],
+    activityLog: [],
     customProfile: {
       backgroundColor: '#1a1a2e',
-      textColor: '#ffffff',
-      badges: ['newcomer'],
-      level: 1,
-      points: 0
+      textColor: '#gold',
+      badges: ['owner', 'founder', 'developer'],
+      level: 100,
+      points: 10000
     }
-  };
-
-  MOCK_USERS[username] = newUser;
-  const { password: _, ...userWithoutPassword } = newUser;
-  setCurrentUser(userWithoutPassword);
-  return true;
+  }
 };
 
-// Admin channels configuration
-const ADMIN_CHANNELS = [
-  {
-    id: 'admin-dashboard',
-    name: '🛡️ Admin Dashboard',
-    type: 'admin',
-    description: 'Administrative controls and monitoring',
-    allowedRoles: ['owner', 'admin']
-  },
-  {
-    id: 'mod-logs',
-    name: '📝 Moderation Logs',
-    type: 'admin',
-    description: 'View all moderation actions',
-    allowedRoles: ['owner', 'admin', 'moderator']
-  }
-];
-
-export const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('currentUser');
-    return saved ? JSON.parse(saved) : null;
-  });
-  
-  // Use the idle hook to track user activity
-  const isIdle = useIdle(300000); // 5 minutes
+const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [mockUsers, setMockUsers] = useState(INITIAL_MOCK_USERS);
+  const isIdle = useIdle(300000);
 
   useEffect(() => {
     if (currentUser) {
@@ -110,28 +72,9 @@ export const App: React.FC = () => {
     }
   }, [isIdle]);
 
-  // Handle window focus/blur for online status
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (currentUser) {
-        const updatedUser = {
-          ...currentUser,
-          status: document.hidden ? 'away' : 'online'
-        };
-        setCurrentUser(updatedUser);
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [currentUser]);
-
   const handleLogin = (username: string, password: string): boolean => {
-    const user = MOCK_USERS[username];
-    if (user && user.password === password && !user.isBanned) {
+    const user = mockUsers[username];
+    if (user && user.password === password) {
       const { password: _, ...userWithoutPassword } = user;
       const updatedUser = {
         ...userWithoutPassword,
@@ -153,7 +96,7 @@ export const App: React.FC = () => {
   };
 
   const handleRegister = (username: string, password: string): boolean => {
-    if (MOCK_USERS[username]) {
+    if (mockUsers[username]) {
       return false;
     }
 
@@ -163,7 +106,7 @@ export const App: React.FC = () => {
       password,
       role: 'user',
       status: 'online',
-      joinDate: new Date().toISOString(),
+      joinDate: new Date().toISOString().split('T')[0],
       lastLogin: new Date().toISOString(),
       permissions: ['CHAT', 'UPDATE_PROFILE'],
       activityLog: [{
@@ -180,7 +123,11 @@ export const App: React.FC = () => {
       }
     };
 
-    MOCK_USERS[username] = newUser;
+    setMockUsers(prev => ({
+      ...prev,
+      [username]: newUser
+    }));
+
     const { password: _, ...userWithoutPassword } = newUser;
     setCurrentUser(userWithoutPassword);
     return true;
@@ -191,11 +138,7 @@ export const App: React.FC = () => {
       <div className="app">
         <header className="app-header">
           <div className="app-info">
-            <div>
-              Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): {
-                new Date().toISOString().replace('T', ' ').slice(0, 19)
-              }
-            </div>
+            <div>Current Date and Time (UTC): {new Date().toISOString().slice(0, 19).replace('T', ' ')}</div>
             <div>Current User's Login: {currentUser?.username || 'not logged in'}</div>
           </div>
         </header>
@@ -207,16 +150,8 @@ export const App: React.FC = () => {
           } />
           <Route path="/chat" element={
             currentUser ? 
-            <ChatPage 
-              currentUser={currentUser} 
-              adminChannels={currentUser.role === 'owner' ? ADMIN_CHANNELS : []}
-            /> : 
+            <ChatPage currentUser={currentUser} /> : 
             <Navigate to="/" />
-          } />
-          <Route path="/admin/*" element={
-            currentUser?.role === 'owner' ? 
-            <AdminPanel currentUser={currentUser} /> : 
-            <Navigate to="/chat" />
           } />
           <Route path="/profile/:username" element={
             <UserProfile currentUser={currentUser} />
