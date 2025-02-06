@@ -7,93 +7,60 @@ import AdminPanel from './components/AdminPanel';
 import { useIdle } from './hooks/useIdle';
 import './styles/main.css';
 
+type UserStatus = 'online' | 'away' | 'offline';
+type UserRole = 'owner' | 'admin' | 'moderator' | 'user' | 'guest';
+type ActivityType = 'login' | 'message' | 'channel_join' | 'profile_update' | 'moderation_action';
+
 export interface User {
   id: string;
   username: string;
-  role: 'owner' | 'admin' | 'moderator' | 'user' | 'guest';
-  status: 'online' | 'away' | 'offline';
+  role: UserRole;
+  status: UserStatus;
   description?: string;
   joinDate: string;
   lastLogin: string;
   permissions: string[];
   activityLog: ActivityLog[];
-  customProfile?: {
-    backgroundColor?: string;
-    textColor?: string;
-    badges: string[];
-    level: number;
-    points: number;
-  };
+  customProfile?: UserProfile;
 }
 
 interface ActivityLog {
-  type: 'login' | 'message' | 'channel_join' | 'profile_update' | 'moderation_action';
+  type: ActivityType;
   timestamp: string;
   details: string;
 }
 
-// Move MOCK_USERS to a class-level constant
-const INITIAL_MOCK_USERS: Record<string, User & { password: string }> = {
-  'sigmabread': {
-    id: '1',
-    username: 'sigmabread',
-    password: 'admin123',
-    role: 'owner',
-    status: 'offline',
-    description: 'Owner of the chat',
-    joinDate: '2025-01-01',
-    lastLogin: new Date().toISOString(),
-    permissions: ['ADMIN_PANEL', 'MANAGE_USERS', 'MANAGE_CHANNELS', 'MODERATE_CONTENT', 'VIEW_LOGS'],
-    activityLog: [],
-    customProfile: {
-      backgroundColor: '#1a1a2e',
-      textColor: '#gold',
-      badges: ['owner', 'founder', 'developer'],
-      level: 100,
-      points: 10000
-    }
+interface UserProfile {
+  backgroundColor?: string;
+  textColor?: string;
+  badges: string[];
+  level: number;
+  points: number;
+}
+
+// Update the handleLogin function
+const handleLogin = (username: string, password: string): boolean => {
+  const user = mockUsers[username];
+  if (user && user.password === password) {
+    const { password: _, ...userWithoutPassword } = user;
+    const updatedUser: User = {
+      ...userWithoutPassword,
+      status: 'online' as UserStatus,
+      lastLogin: new Date().toISOString(),
+      activityLog: [
+        ...userWithoutPassword.activityLog,
+        {
+          type: 'login',
+          timestamp: new Date().toISOString(),
+          details: 'User logged in'
+        }
+      ]
+    };
+    setCurrentUser(updatedUser);
+    return true;
   }
+  return false;
 };
-
-const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [mockUsers, setMockUsers] = useState(INITIAL_MOCK_USERS);
-  const isIdle = useIdle(300000);
-
-  useEffect(() => {
-    if (currentUser) {
-      const updatedUser = {
-        ...currentUser,
-        status: isIdle ? 'away' : 'online',
-        lastLogin: new Date().toISOString()
-      };
-      setCurrentUser(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    }
-  }, [isIdle]);
-
-  const handleLogin = (username: string, password: string): boolean => {
-    const user = mockUsers[username];
-    if (user && user.password === password) {
-      const { password: _, ...userWithoutPassword } = user;
-      const updatedUser = {
-        ...userWithoutPassword,
-        status: 'online',
-        lastLogin: new Date().toISOString(),
-        activityLog: [
-          ...userWithoutPassword.activityLog,
-          {
-            type: 'login',
-            timestamp: new Date().toISOString(),
-            details: 'User logged in'
-          }
-        ]
-      };
-      setCurrentUser(updatedUser);
-      return true;
-    }
-    return false;
-  };
 
   const handleRegister = (username: string, password: string): boolean => {
     if (mockUsers[username]) {
