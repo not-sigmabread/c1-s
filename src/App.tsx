@@ -1,71 +1,90 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
-import ChatPage from './pages/ChatPage';
-import UserProfile from './components/UserProfile';
-import AdminPanel from './components/AdminPanel';
-import { useIdle } from './hooks/useIdle';
-import './styles/main.css';
+import { LandingPage } from './pages/LandingPage';
+import { ChatPage } from './pages/ChatPage';
+import { AdminPanel } from './pages/AdminPanel';
+import { UserProfile } from './pages/UserProfile';
+import { Header } from './components/Header';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { UserProvider } from './contexts/UserContext';
 import './styles/variables.css';
-import './styles/utilities.css';
-
-type UserStatus = 'online' | 'away' | 'offline';
-type UserRole = 'owner' | 'admin' | 'moderator' | 'user' | 'guest';
-type ActivityType = 'login' | 'message' | 'channel_join' | 'profile_update' | 'moderation_action';
+import './styles/global.css';
 
 export interface User {
   id: string;
   username: string;
-  role: UserRole;
-  status: UserStatus;
-  description?: string;
+  role: 'owner' | 'admin' | 'moderator' | 'user' | 'guest';
+  status: 'online' | 'away' | 'offline' | 'dnd';
   joinDate: string;
   lastLogin: string;
   permissions: string[];
-  activityLog: ActivityLog[];
-  customProfile?: UserProfile;
-}
-
-interface ActivityLog {
-  type: ActivityType;
-  timestamp: string;
-  details: string;
-}
-
-interface UserProfile {
-  backgroundColor?: string;
-  textColor?: string;
-  badges: string[];
-  level: number;
-  points: number;
-}
-
-// Update the handleLogin function
-const handleLogin = (username: string, password: string): boolean => {
-  const user = mockUsers[username];
-  if (user && user.password === password) {
-    const { password: _, ...userWithoutPassword } = user;
-    const updatedUser: User = {
-      ...userWithoutPassword,
-      status: 'online' as UserStatus,
-      lastLogin: new Date().toISOString(),
-      activityLog: [
-        ...userWithoutPassword.activityLog,
-        {
-          type: 'login',
-          timestamp: new Date().toISOString(),
-          details: 'User logged in'
-        }
-      ]
+  profileData: {
+    avatar?: string;
+    customTitle?: string;
+    badges: string[];
+    level: number;
+    xp: number;
+    bio?: string;
+    customTheme?: {
+      primary: string;
+      secondary: string;
     };
-    setCurrentUser(updatedUser);
-    return true;
+  };
+}
+
+const initialUsers: Record<string, { password: string } & User> = {
+  'sigmabread': {
+    id: '1',
+    username: 'sigmabread',
+    password: 'admin123',
+    role: 'owner',
+    status: 'online',
+    joinDate: '2025-01-01',
+    lastLogin: new Date().toISOString(),
+    permissions: ['ADMIN', 'MODERATE', 'MANAGE_USERS', 'MANAGE_CHANNELS'],
+    profileData: {
+      badges: ['owner', 'founder', 'developer'],
+      level: 100,
+      xp: 10000,
+      customTitle: 'Site Owner',
+      customTheme: {
+        primary: '#38bdf8',
+        secondary: '#2563eb'
+      }
+    }
   }
-  return false;
 };
 
+const App: React.FC = () => {
+  const [users, setUsers] = useState(initialUsers);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Check for saved session
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const handleLogin = (username: string, password: string): boolean => {
+    const user = users[username];
+    if (user && user.password === password) {
+      const { password: _, ...userWithoutPassword } = user;
+      const updatedUser = {
+        ...userWithoutPassword,
+        status: 'online',
+        lastLogin: new Date().toISOString()
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      return true;
+    }
+    return false;
+  };
+
   const handleRegister = (username: string, password: string): boolean => {
-    if (mockUsers[username]) {
+    if (users[username]) {
       return false;
     }
 
@@ -75,58 +94,77 @@ const handleLogin = (username: string, password: string): boolean => {
       password,
       role: 'user',
       status: 'online',
-      joinDate: new Date().toISOString().split('T')[0],
+      joinDate: new Date().toISOString(),
       lastLogin: new Date().toISOString(),
-      permissions: ['CHAT', 'UPDATE_PROFILE'],
-      activityLog: [{
-        type: 'login',
-        timestamp: new Date().toISOString(),
-        details: 'Account created'
-      }],
-      customProfile: {
-        backgroundColor: '#1a1a2e',
-        textColor: '#ffffff',
+      permissions: ['CHAT', 'EDIT_PROFILE'],
+      profileData: {
         badges: ['newcomer'],
         level: 1,
-        points: 0
+        xp: 0
       }
     };
 
-    setMockUsers(prev => ({
+    setUsers(prev => ({
       ...prev,
       [username]: newUser
     }));
 
     const { password: _, ...userWithoutPassword } = newUser;
     setCurrentUser(userWithoutPassword);
+    localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
     return true;
+  };
+
+  const handleLogout = () => {
+    if (currentUser) {
+      const updatedUser = { ...currentUser, status: 'offline' };
+      setUsers(prev => ({
+        ...prev,
+        [currentUser.username]: { ...prev[currentUser.username], ...updatedUser }
+      }));
+    }
+    setCurrentUser(null);
+    localStorage.removeItem('currentUser');
   };
 
   return (
     <Router>
-      <div className="app">
-        <header className="app-header">
-          <div className="app-info">
-            <div>Current Date and Time (UTC): {new Date().toISOString().slice(0, 19).replace('T', ' ')}</div>
-            <div>Current User's Login: {currentUser?.username || 'not logged in'}</div>
+      <ThemeProvider>
+        <UserProvider value={{ currentUser, users: Object.values(users), handleLogout }}>
+          <div className="app">
+            <Header />
+            <main className="main-content">
+              <Routes>
+                <Route 
+                  path="/" 
+                  element={
+                    currentUser ? <Navigate to="/chat" /> : 
+                    <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
+                  } 
+                />
+                <Route 
+                  path="/chat/*" 
+                  element={
+                    currentUser ? <ChatPage /> : <Navigate to="/" />
+                  } 
+                />
+                <Route 
+                  path="/admin/*" 
+                  element={
+                    currentUser?.role === 'owner' ? <AdminPanel /> : <Navigate to="/chat" />
+                  } 
+                />
+                <Route 
+                  path="/profile/:username" 
+                  element={
+                    currentUser ? <UserProfile /> : <Navigate to="/" />
+                  } 
+                />
+              </Routes>
+            </main>
           </div>
-        </header>
-        <Routes>
-          <Route path="/" element={
-            currentUser ? 
-            <Navigate to="/chat" /> : 
-            <LandingPage onLogin={handleLogin} onRegister={handleRegister} />
-          } />
-          <Route path="/chat" element={
-            currentUser ? 
-            <ChatPage currentUser={currentUser} /> : 
-            <Navigate to="/" />
-          } />
-          <Route path="/profile/:username" element={
-            <UserProfile currentUser={currentUser} />
-          } />
-        </Routes>
-      </div>
+        </UserProvider>
+      </ThemeProvider>
     </Router>
   );
 };
