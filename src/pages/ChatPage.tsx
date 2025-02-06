@@ -1,6 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../App';
 import '../styles/ChatPage.css';
+import AdminPanelChannel from '../components/AdminPanelChannel';
+
+// Inside the ChatPage component's return statement, update the main chat area:
+<main className="chat-main">
+  {currentChannel === 'admin-panel' ? (
+    <AdminPanelChannel currentUser={currentUser} />
+  ) : (
+    <>
+      <div className="chat-header">
+        <h2>{CHANNELS.find(c => c.id === currentChannel)?.name}</h2>
+      </div>
+      <div className="messages-container">
+        {/* Regular chat messages */}
+      </div>
+      <div className="chat-input-container">
+        <input
+          type="text"
+          placeholder="Type a message..."
+          className="chat-input"
+        />
+        <button className="send-button">Send</button>
+      </div>
+    </>
+  )}
+</main>
 
 interface ChatPageProps {
   currentUser: User;
