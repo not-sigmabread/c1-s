@@ -1,0 +1,187 @@
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Base Styles */
+html {
+  font-family: var(--font-family);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  line-height: 1.2;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Links */
+a {
+  color: var(--primary-500);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-600);
+}
+
+/* Buttons */
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: all var(--transition-normal);
+  gap: var(--spacing-2);
+}
+
+.btn-primary {
+  background: var(--primary-500);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-600);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-secondary);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: var(--error-base);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: var(--error-dark);
+  transform: translateY(-1px);
+}
+
+/* Form Elements */
+input, textarea, select {
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2) var(--spacing-3);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 2px var(--primary-100);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-500);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-600);
+}
+
+/* Status Indicators */
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.status-online {
+  background: var(--status-online);
+}
+
+.status-away {
+  background: var(--status-away);
+}
+
+.status-offline {
+  background: var(--status-offline);
+}
+
+.status-dnd {
+  background: var(--status-dnd);
+}
+
+/* Role Badges */
+.role-badge {
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.role-owner {
+  background: var(--role-owner-gradient);
+  color: white;
+}
+
+.role-admin {
+  background: var(--role-admin-gradient);
+  color: white;
+}
+
+.role-mod {
+  background: var(--role-mod-gradient);
+  color: white;
+}
+
+.role-user {
+  background: var(--role-user-gradient);
+  color: white;
+}
